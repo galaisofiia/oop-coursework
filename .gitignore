@@ -1,0 +1,25 @@
+# сборка
+build/
+cmake-build-*/
+*.o
+*.obj
+*.exe
+
+# ide и редакторы
+.vscode/
+.vs/
+*.swp
+*.swo
+*~
+
+# qt
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+
+# os
+.DS_Store
+Thumbs.db
+
+# тестовые файлы
+test_contacts.json
