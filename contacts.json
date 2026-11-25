@@ -1,0 +1,21 @@
+[
+    {
+        "address": "",
+        "birthdate": "0.0.0",
+        "email": "ivanov@example.com",
+        "id": 1,
+        "name": "иван",
+        "patronymic": "",
+        "phones": [
+            {
+                "number": "+78123456789",
+                "type": "рабочий"
+            },
+            {
+                "number": "+78005553535",
+                "type": "служебный"
+            }
+        ],
+        "surname": "иванов"
+    }
+]
