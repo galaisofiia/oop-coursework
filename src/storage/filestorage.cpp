@@ -1,4 +1,5 @@
 #include "filestorage.h"
+#include "../models/phone.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <iostream>
@@ -24,7 +25,10 @@ bool filestorage::save(const std::vector<contact>& contacts) {
         // массив номеров для контакта
         json phones_json = json::array();
         for (const auto& p : c.getphones()) {
-            phones_json.push_back(p.getformatted());
+            json phone_obj;
+            phone_obj["number"] = p.getformatted();
+            phone_obj["type"] = phone::type_to_string(p.gettype());
+            phones_json.push_back(phone_obj);
         }
         contact_json["phones"] = phones_json;
         
@@ -75,7 +79,13 @@ std::vector<contact> filestorage::load() {
             
             if (item.contains("phones") && item["phones"].is_array()) {
                 for (const auto& p : item["phones"]) {
-                    c.addphone(p.get<std::string>());
+                    if (p.is_object() && p.contains("number") && p.contains("type")) {
+                        std::string number = p["number"].get<std::string>();
+                        std::string type_str = p["type"].get<std::string>();
+                        c.addphone(number, phone::string_to_type(type_str));
+                    } else if (p.is_string()) {
+                        c.addphone(p.get<std::string>());
+                    }
                 }
             }
             contacts.push_back(c);

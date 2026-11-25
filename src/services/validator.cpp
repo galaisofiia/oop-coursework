@@ -2,7 +2,8 @@
 #include <cctype>
 #include <chrono>
 #include <ctime>
-#include <regex>
+#include <QRegularExpression>
+#include <QString>
 
 std::string validator::trim(const std::string& s) {
     size_t start = s.find_first_not_of(" \t\r\n");
@@ -24,20 +25,17 @@ bool validator::checkname(const std::string& name) {
         return false;
     }
 
-    // должен начинаться на букву 
-    unsigned char first = static_cast<unsigned char>(trimmed.front());
-    bool starts_with_letter =
-        (first >= 'A' && first <= 'Z') ||
-        (first >= 'a' && first <= 'z') ||
-        (first >= 128); // поддержка байтов utf-8 
+    QString qname = QString::fromStdString(trimmed);
 
-    if (!starts_with_letter) {
+    // первый символ должен быть буквой (латиница или кириллица)
+    QRegularExpression first_letter("^[A-Za-zА-Яа-яЁё]");
+    if (!first_letter.match(qname).hasMatch()) {
         return false;
     }
 
-    // разрешенные символы
-    std::regex pattern(R"(^[A-Za-zА-Яа-яЁё0-9\- ]+$)");
-    return std::regex_match(trimmed, pattern);
+    // остальные символы: буквы, цифры, дефис, пробел
+    QRegularExpression pattern("^[A-Za-zА-Яа-яЁё0-9\\- ]+$");
+    return pattern.match(qname).hasMatch();
 }
 
 bool validator::checkemail(const std::string& email) {
@@ -54,11 +52,9 @@ bool validator::checkemail(const std::string& email) {
         return false;
     }
 
-    std::string normalized = before_at + "@" + after_at;
-
-    // имя пользователя и домен — латинские буквы и цифры
-    std::regex pattern(R"(^[A-Za-z0-9]+@[A-Za-z0-9]+(\.[A-Za-z0-9]+)+$)");
-    return std::regex_match(normalized, pattern);
+    QString qemail = QString::fromStdString(before_at + "@" + after_at);
+    QRegularExpression pattern("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    return pattern.match(qemail).hasMatch();
 }
 
 bool validator::checkdate(int day, int month, int year) {
@@ -69,10 +65,12 @@ bool validator::checkdate(int day, int month, int year) {
     int max_days = daysinmonth(month, year);
     if (day > max_days) return false;
     
-    // Дата должна быть строго меньше текущей даты
-    auto now = std::chrono::system_clock::now();
+    // дата должна быть строго меньше текущей даты
+    auto now = std::chrono::system_clock::now(); // текущее время
+    // преобразование в time_t (кол-во секунд с 01.01.1970)
     std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-    std::tm local_tm{};
+    // структура для хранения разбитого времени (ден, месяц, год)
+    std::tm local_tm{}; 
 #if defined(_WIN32)
     localtime_s(&local_tm, &now_time);
 #else
@@ -109,10 +107,10 @@ std::string validator::formatphone(const std::string& phone) {
 
 bool validator::checkphone(const std::string& phone) {
     // форматы: +78121234567, 88121234567, +7(812)1234567 итд
-    // R - raw string чтобы писать ОДИН \ а не два
     // ^ $ - начало и конец строки
-    std::regex pattern(R"(^(\+7|8)(\(\d{3}\)|\d{3})(\d{7}|\d{3}-\d{2}-\d{2})$)");
-    return std::regex_match(phone, pattern);
+    QString qphone = QString::fromStdString(phone);
+    QRegularExpression pattern("^(\\+7|8)(\\(\\d{3}\\)|\\d{3})(\\d{7}|\\d{3}-\\d{2}-\\d{2})$");
+    return pattern.match(qphone).hasMatch();
 }
 
 bool validator::isleapyear(int year) {

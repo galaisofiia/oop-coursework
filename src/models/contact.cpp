@@ -11,33 +11,21 @@ int contact::generateid() {
     return next_id++;
 }
 
-void contact::setid(int id) {
-    this->id = id;
+void contact::setid(int id) { this->id = id; }
+void contact::setname(const std::string& name) { this->name = name; }
+void contact::setsurname(const std::string& surname) { this->surname = surname; }
+void contact::setemail(const std::string& email) { this->email = email; }
+
+void contact::addphone(const std::string& phone_str, phone_type type) {
+    // emplace_back передает параметры в конструктор, который 
+    // создает объект сразу в конце вектора
+    phones.emplace_back(phone_str, type);
 }
 
-void contact::setname(const std::string& name) {
-    this->name = name;
-}
-
-void contact::setsurname(const std::string& surname) {
-    this->surname = surname;
-}
-
-void contact::setemail(const std::string& email) {
-    this->email = email;
-}
-
-void contact::addphone(const std::string& phone_str) {
-    phones.emplace_back(phone_str);
-}
-
-void contact::setpatronymic(const std::string& patronymic) {
+void contact::setpatronymic(const std::string& patronymic) { 
     this->patronymic = patronymic;
 }
-
-void contact::setaddress(const std::string& address) {
-    this->address = address;
-}
+void contact::setaddress(const std::string& address) { this->address = address; }
 
 void contact::setbirthdate(int day, int month, int year) {
     birth_day = day;

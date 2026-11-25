@@ -18,6 +18,8 @@ public:
 
     std::vector<contact> getallcontacts() const;
     std::optional<contact> getcontactbyid(int id) const;
+    // геттер текущего списка конткатов (отсортированного или нет)
+    std::vector<contact> getcurrentlist() const;
     
     std::vector<contact> searchbyname(const std::string& name) const;
     std::vector<contact> searchbyemail(const std::string& email) const;
@@ -26,9 +28,6 @@ public:
     void sortbyname();
     void sortbyemail();
     void sortbyphone();
-    
-    // геттер текущего списка конткатов (отсортированного или нет)
-    std::vector<contact> getcurrentlist() const;
 
 private:
     std::shared_ptr<istorage> storage;

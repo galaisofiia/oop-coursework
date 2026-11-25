@@ -2,19 +2,23 @@
 #include <string>
 #include <memory>
 #include <optional>
+#include <stdexcept>
+#include <QApplication>
 #include "models/contact.h"
 #include "services/contactmanager.h"
 #include "storage/filestorage.h"
+#include "storage/dbstorage.h"
+#include "ui/mainwindow.h"
 
 void printcontact(const contact& c) {
-    std::cout << "id: " << c.getid() << "\n";
-    std::cout << "имя: " << c.getname() << "\n";
-    std::cout << "фамилия: " << c.getsurname() << "\n";
-    std::cout << "отчество: " << c.getpatronymic() << "\n";
-    std::cout << "email: " << c.getemail() << "\n";
-    std::cout << "адрес: " << c.getaddress() << "\n";
-    std::cout << "дата рождения: " << c.getbirthdate() << "\n";
-    std::cout << "телефоны:\n";
+    std::cout << "ID: " << c.getid() << "\n";
+    std::cout << "Имя: " << c.getname() << "\n";
+    std::cout << "Фамилия: " << c.getsurname() << "\n";
+    std::cout << "Отчество: " << c.getpatronymic() << "\n";
+    std::cout << "E-mail: " << c.getemail() << "\n";
+    std::cout << "Адрес: " << c.getaddress() << "\n";
+    std::cout << "Дата рождения: " << c.getbirthdate() << "\n";
+    std::cout << "Телефоны:\n";
     for (const auto& p : c.getphones()) {
         std::cout << "  - " << p.getformatted() << "\n";
     }
@@ -28,9 +32,31 @@ std::string getinput(const std::string& prompt) {
     return input;
 }
 
-int main() {
-    auto storage = std::make_shared<filestorage>("contacts.json");
-    contactmanager manager(storage);
+int main(int argc, char *argv[]) {
+    // инициализация qt (нужна для работы qsqldatabase)
+    QApplication app(argc, argv);
+
+    std::shared_ptr<istorage> storage;
+    
+    // выбор хранилища через аргументы командной строки
+    if (argc > 1 && std::string(argv[1]) == "--db") {
+        // сервер postgresql 
+        storage = std::make_shared<dbstorage>("localhost", "testdb", "testuser", "testpass");
+        std::cout << "Режим: база данных postgresql\n\n";
+    } else {
+        // текстовый файл json на жестком диске 
+        storage = std::make_shared<filestorage>("contacts.json");
+        std::cout << "Режим: файловое хранилище json\n\n";
+    }
+
+    // создаем менеджер как умный указатель
+    auto manager = std::make_shared<contactmanager>(storage);
+
+    if (argc > 1 && std::string(argv[1]) == "--gui") {
+        mainwindow w(manager);
+        w.show();
+        return app.exec();
+    }
 
     while (true) {
         std::cout << "Меню:\n";
@@ -50,7 +76,7 @@ int main() {
         try {
             choice = std::stoi(choice_str);
         } catch (const std::invalid_argument&) {
-            std::cout << "Неверный ввод. Введите число.\n\n";
+            std::cout << "Неверный ввод. введите число.\n\n";
             continue;
         } catch (const std::out_of_range&) {
             std::cout << "Число слишком большое!\n\n";
@@ -59,7 +85,7 @@ int main() {
 
         switch (choice) {
             case 1: {
-                auto contacts = manager.getallcontacts();
+                auto contacts = manager->getallcontacts();
                 if (contacts.empty()) {
                     std::cout << "Список пуст\n\n";
                 } else {
@@ -73,7 +99,7 @@ int main() {
                 contact c;
                 c.setname(getinput("Имя: "));
                 c.setsurname(getinput("Фамилия: "));
-                c.setemail(getinput("E-mail: "));
+                c.setemail(getinput("Е-mail: "));
                 c.addphone(getinput("Телефон: "));
                 c.setpatronymic(getinput("Отчество (необязательно): "));
                 c.setaddress(getinput("Адрес (необязательно): "));
@@ -90,7 +116,7 @@ int main() {
                     }
                 }
 
-                if (manager.addcontact(c)) {
+                if (manager->addcontact(c)) {
                     std::cout << "Контакт добавлен.\n\n";
                 } else {
                     std::cout << "Ошибка валидации. Проверьте данные.\n\n";
@@ -106,14 +132,14 @@ int main() {
                     continue;
                 }
 
-                auto opt_c = manager.getcontactbyid(id);
+                auto opt_c = manager->getcontactbyid(id);
                 if (!opt_c) {
                     std::cout << "Контакт не найден!\n\n";
                     continue;
                 }
                 
                 contact c = *opt_c;
-                std::cout << "Оставьте поле пустым, чтобы не менять его\n";
+                std::cout << "Оставьте поле пустым, чтобы не менять его.\n";
                 
                 std::string name = getinput("Новое имя [" + c.getname() + "]: ");
                 if (!name.empty()) c.setname(name);
@@ -121,7 +147,7 @@ int main() {
                 std::string surname = getinput("Новая фамилия [" + c.getsurname() + "]: ");
                 if (!surname.empty()) c.setsurname(surname);
                 
-                std::string email = getinput("Новый e-mail [" + c.getemail() + "]: ");
+                std::string email = getinput("Новый email [" + c.getemail() + "]: ");
                 if (!email.empty()) c.setemail(email);
                 
                 std::string phone = getinput("Новый телефон [" + (c.getphones().empty() ? "" : c.getphones()[0].getformatted()) + "]: ");
@@ -135,7 +161,7 @@ int main() {
                     c.setaddress(opt_c->getaddress());
                 }
 
-                if (manager.updatecontact(c)) {
+                if (manager->updatecontact(c)) {
                     std::cout << "Контакт обновлен.\n\n";
                 } else {
                     std::cout << "Ошибка валидации при обновлении.\n\n";
@@ -151,7 +177,7 @@ int main() {
                     continue;
                 }
 
-                if (manager.removecontact(id)) {
+                if (manager->removecontact(id)) {
                     std::cout << "Контакт удален.\n\n";
                 } else {
                     std::cout << "Контакт не найден!\n\n";
@@ -165,9 +191,9 @@ int main() {
                 std::string query = getinput("Поисковый запрос: ");
                 
                 std::vector<contact> results;
-                if (search_choice == "1") results = manager.searchbyname(query);
-                else if (search_choice == "2") results = manager.searchbyemail(query);
-                else if (search_choice == "3") results = manager.searchbyphone(query);
+                if (search_choice == "1") results = manager->searchbyname(query);
+                else if (search_choice == "2") results = manager->searchbyemail(query);
+                else if (search_choice == "3") results = manager->searchbyphone(query);
                 
                 if (results.empty()) {
                     std::cout << "Ничего не найдено.\n\n";
@@ -183,15 +209,15 @@ int main() {
                 std::string sort_choice;
                 std::getline(std::cin, sort_choice);
                 
-                if (sort_choice == "1") manager.sortbyname();
-                else if (sort_choice == "2") manager.sortbyemail();
-                else if (sort_choice == "3") manager.sortbyphone();
+                if (sort_choice == "1") manager->sortbyname();
+                else if (sort_choice == "2") manager->sortbyemail();
+                else if (sort_choice == "3") manager->sortbyphone();
                 
                 std::cout << "Сортировка применена. Используйте пункт 1 для просмотра.\n\n";
                 break;
             }
             case 7: {
-                std::cout << "Выход из программы...\n";
+                std::cout << "Выход из программы\n";
                 return 0;
             }
             default: {

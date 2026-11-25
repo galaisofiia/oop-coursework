@@ -49,9 +49,8 @@ bool contactmanager::updatecontact(const contact& c) {
     return false;
 }
 
-std::vector<contact> contactmanager::getallcontacts() const {
-    return currentlist;
-}
+std::vector<contact> contactmanager::getallcontacts() const { return currentlist; }
+std::vector<contact> contactmanager::getcurrentlist() const { return currentlist; }
 
 std::optional<contact> contactmanager::getcontactbyid(int id) const {
     for (const auto& c : currentlist) {
@@ -145,14 +144,5 @@ void contactmanager::sortbyphone() {
         });
 }
 
-std::vector<contact> contactmanager::getcurrentlist() const {
-    return currentlist;
-}
-
-void contactmanager::loadfromstorage() {
-    currentlist = storage->load();
-}
-
-void contactmanager::savetostorage() {
-    storage->save(currentlist);
-}
+void contactmanager::loadfromstorage() { currentlist = storage->load(); }
+void contactmanager::savetostorage() { storage->save(currentlist); }

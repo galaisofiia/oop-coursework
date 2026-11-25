@@ -17,7 +17,7 @@ public:
     void setname(const std::string& name);
     void setsurname(const std::string& surname);
     void setemail(const std::string& email);
-    void addphone(const std::string& phone);
+    void addphone(const std::string& phone_str, phone_type type = phone_type::home);
     
     // необязательные поля
     void setpatronymic(const std::string& patronymic);
